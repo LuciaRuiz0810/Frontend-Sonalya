@@ -33,7 +33,7 @@
 // IMPORTACIONES
 // =============================================================================
 
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { almacenApp, alternarTema, abrirModalAuth, cerrarSesion, mostrarNotificacion } from '@/stores/appStore'
 import { api } from '@/servicios/api'
 
@@ -114,7 +114,9 @@ const emitir = defineEmits(['buscar', 'volver', 'cambiarPagina', 'toggleMenu'])
  * Texto actual en la barra de búsqueda
  * Se actualiza con v-model cuando el usuario escribe
  */
-const textoBusqueda = ref('')
+const textoBusqueda    = ref('')
+const inputBusqueda    = ref(null)
+const busquedaExpandida = ref(false)
 
 watch(() => propiedades.resetearContador, () => {
     textoBusqueda.value = ''
@@ -149,6 +151,13 @@ function alBuscar() {
     emitir('buscar', textoBusqueda.value)
 }
 
+function alHacerClicEnBarra() {
+    if (!propiedades.grande) {
+        emitir('cambiarPagina', 'buscar')
+    }
+    nextTick(() => inputBusqueda.value?.focus())
+}
+
 /**
  * Se ejecuta cuando el usuario hace clic en el botón de volver
  */
@@ -173,7 +182,7 @@ async function alCerrarSesion() {
     <!--
       Barra superior con búsqueda y acciones de usuario
     -->
-    <header class="barra-superior">
+    <header class="barra-superior" :class="{ 'busqueda-activa': busquedaExpandida }">
 
         <!-- Botón hamburguesa: solo visible en móvil, solo cuando NO hay volver -->
         <button
@@ -204,16 +213,21 @@ async function alCerrarSesion() {
             v-if="mostrarBusqueda"
             class="barra-busqueda"
             :class="{ 'barra-busqueda-grande': grande }"
+            @click="alHacerClicEnBarra"
         >
             <!-- Icono de búsqueda -->
             <i class="fas fa-search"></i>
 
             <!-- Campo de entrada de texto -->
             <input
+                ref="inputBusqueda"
                 type="text"
                 :placeholder="placeholder"
                 v-model="textoBusqueda"
                 @input="alBuscar"
+                @click.stop
+                @focus="busquedaExpandida = true"
+                @blur="busquedaExpandida = false"
             >
         </div>
 
@@ -414,5 +428,31 @@ async function alCerrarSesion() {
 .boton-registro:hover {
     background: #e0e0e0;
     transform: scale(1.03);
+}
+
+/* ── Expansión de la barra de búsqueda en móvil al enfocar ── */
+@media (max-width: 768px) {
+    .boton-hamburguesa,
+    .boton-volver,
+    .acciones-usuario {
+        transition: opacity 0.2s ease;
+    }
+
+    .barra-superior.busqueda-activa .barra-busqueda {
+        position: absolute;
+        left: 10px;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 10;
+        box-shadow: 0 2px 20px rgba(0, 0, 0, 0.35);
+    }
+
+    .barra-superior.busqueda-activa .boton-hamburguesa,
+    .barra-superior.busqueda-activa .boton-volver,
+    .barra-superior.busqueda-activa .acciones-usuario {
+        opacity: 0;
+        pointer-events: none;
+    }
 }
 </style>

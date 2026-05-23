@@ -1,4 +1,4 @@
-const URL_API = import.meta.env.VITE_API_URL
+const URL_API = 'http://localhost:8000/api'
 
 function obtenerCabeceras(esFormData = false) {
     const token = localStorage.getItem('token_auth')
@@ -14,7 +14,10 @@ async function peticion(ruta, opciones = {}) {
         headers: obtenerCabeceras(),
     })
     const datos = await respuesta.json()
-    if (!respuesta.ok) throw datos
+    if (!respuesta.ok) {
+        datos.httpStatus = respuesta.status
+        throw datos
+    }
     return datos
 }
 
@@ -25,7 +28,10 @@ async function peticionFormData(ruta, formData) {
         body: formData,
     })
     const datos = await respuesta.json()
-    if (!respuesta.ok) throw datos
+    if (!respuesta.ok) {
+        datos.httpStatus = respuesta.status
+        throw datos
+    }
     return datos
 }
 
